@@ -5,11 +5,12 @@ import atomai as aoi
 from atomai.transforms import datatransform
 from atomai.trainers import EnsembleTrainer
 
-def train(images_path, masks_path):
+def train(images_path, masks_path, nmodels=20):
     """ Train an ensembe of models from saved numpy files of images and masks.
     Args:
         images_path (str): Path to file containing a numpy array of images.
         masks_path (str): Path to file containing numpy array of images.
+        nmodels (int): Number of ensemble models to train.
     Returns:
         smodel ???
         ensembe ???
@@ -28,8 +29,13 @@ def train(images_path, masks_path):
     etrainer = EnsembleTrainer("Unet", nb_classes=1, with_dilation=False,
                                batch_norm=True, nb_filters=64,
                                layers=[2, 3, 3, 4])
-    etrainer.compile_trainer(training_cycles=2000, compute_accuracy=True,
-                             swa=True, memory_alloc=0.5)
+    etrainer.compile_ensemble_trainer(training_cycles=2000,
+                                      compute_accuracy=True,
+                                      swa=True, memory_alloc=0.5)
+    smodel, ensemble = etrainer.train_ensemble_from_scratch(x_train,
+                                                            y_train,
+                                                            nmodels=20)
+
 
 
     pass
