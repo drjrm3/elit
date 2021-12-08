@@ -7,6 +7,7 @@ DATADIR=$(readlink -f ../data)
 IMAGES=/data/cropped_images_subset.npy
 #MASKS=$DATADIR/cropped_masks_new.npy
 MASKS=/data/cropped_masks_subset.npy
+IMAGE=/data/3d_stack8_10nmfov.tif
 
 echo $DATADIR
 ls $DATADIR
@@ -22,4 +23,5 @@ nvidia-docker run \
 	--ulimit memlock=-1 \
 	--ulimit stack=67108864 \
 	elit \
-	elit train --images $IMAGES --masks $MASKS --models 20 --cycles 100
+	elit train --images $IMAGES --masks $MASKS --models 20 --cycles 2000 --out /data/01/model2.pkl
+	#elit infer --image $IMAGE --models /data/01/model2.pkl

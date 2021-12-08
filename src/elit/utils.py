@@ -11,6 +11,7 @@ def get_args():
     train.add_argument("--masks", required=True, type=str)
     train.add_argument("--models", type=int, default=20)
     train.add_argument("--cycles", type=int, default=2000)
+    train.add_argument("--out", type=str, required=True)
 
     infer = subparser.add_parser("infer", help="Infer from models")
     infer.add_argument("--image", required=True, type=str)
