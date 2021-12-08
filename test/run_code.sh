@@ -4,9 +4,9 @@ export PYTHONPATH=$(pwd)/../src:$PYTHONPATH
 
 DATADIR=$(readlink -f ../data)
 #IMAGES=$DATADIR/cropped_images_new.npy
-IMAGES=/data/cropped_images_new.npy
+IMAGES=/data/cropped_images_subset.npy
 #MASKS=$DATADIR/cropped_masks_new.npy
-MASKS=/data/cropped_masks_new.npy
+MASKS=/data/cropped_masks_subset.npy
 
 echo $DATADIR
 ls $DATADIR
@@ -22,4 +22,4 @@ nvidia-docker run \
 	--ulimit memlock=-1 \
 	--ulimit stack=67108864 \
 	elit \
-	elit train --images $IMAGES --masks $MASKS
+	elit train --images $IMAGES --masks $MASKS --models 20 --cycles 100

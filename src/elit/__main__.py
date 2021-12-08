@@ -9,7 +9,8 @@ def main():
     mode = sys.argv[1]
 
     if mode == "train":
-        core.train(args.images, args.masks)
+        core.train(args.images, args.masks, models=args.models,
+                   cycles=args.cycles)
     elif mode == "infer":
         core.infer(args)
     else:

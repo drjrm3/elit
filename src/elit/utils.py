@@ -9,6 +9,8 @@ def get_args():
     train = subparser.add_parser("train", help="Train elit models")
     train.add_argument("--images", required=True, type=str)
     train.add_argument("--masks", required=True, type=str)
+    train.add_argument("--models", type=int, default=20)
+    train.add_argument("--cycles", type=int, default=2000)
 
     infer = subparser.add_parser("infer", help="Infer from models")
     infer.add_argument("--image", required=True, type=str)
