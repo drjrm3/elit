@@ -3,7 +3,6 @@
 import sys
 
 import numpy as np
-import atomai as aoi
 from atomai.transforms import datatransform
 from atomai.trainers import EnsembleTrainer
 from atomai.predictors import SegPredictor
