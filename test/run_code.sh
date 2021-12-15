@@ -23,5 +23,5 @@ nvidia-docker run \
 	--ulimit memlock=-1 \
 	--ulimit stack=67108864 \
 	elit \
-	elit train --images $IMAGES --masks $MASKS --models 20 --cycles 2000 --out /data/01/model2.pkl
-	#elit infer --image $IMAGE --models /data/01/model2.pkl
+	elit infer --image $IMAGE --models /data/01/model2.pkl
+	#elit train --images $IMAGES --masks $MASKS --models 20 --cycles 2000 --out /data/01/model2.pkl

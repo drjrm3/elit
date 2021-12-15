@@ -4,6 +4,9 @@ import os
 import sys
 import pickle
 
+import numpy as np
+from skimage import io
+
 from elit import utils
 from elit.core import train, infer
 
@@ -32,25 +35,26 @@ def main():
 
     if mode == "train":
         # Train model
-        smodel, ensemble = train(args.images, args.masks,
-                                 args.models, args.cycles)
+        images = np.load(args.images)
+        masks = np.load(args.masks)
+        smodel, ensemble = train(images, masks, args.models, args.cycles)
 
         # Save smodel, ensemble to file
-        print("args.out: ", args.out)
         out_dir = os.path.dirname(args.out)
         if not os.path.exists(out_dir):
             os.makedirs(os.path.dirname(args.out))
         with open(args.out, 'wb') as fout:
             pickle.dump((smodel, ensemble), fout)
     elif mode == "infer":
-        # Open model
-        print(args.models)
+        # Load the model
         with open(args.models, 'rb') as finp:
             models = pickle.load(finp)
+        (model, ensemble) = models
+        model.load_state_dict(ensemble[7])
 
         # Perform inference
-        # TODO: Right now I'm randomly choosing model number 19 ... how do we make this decision?
-        infer(args.image, models, 7)
+        img_data = io.imread(args.image)
+        infer(img_data, model)
     else:
         sys.exit("ERROR: Unknown mode '{}'".format(mode))
 
