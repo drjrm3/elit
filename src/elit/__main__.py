@@ -26,7 +26,6 @@ Notebook logic:
     - Inference:
         Input: Ensemble of models + image
         Output: Coordaintes of atoms (masks)
-        
 """
 
 def main():
