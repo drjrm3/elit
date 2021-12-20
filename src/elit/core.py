@@ -9,8 +9,10 @@ from atomai.predictors import SegPredictor
 from atomai.utils import create_lattice_mask
 from skimage import io
 
+from .trainer import train_in_parallel
 
-def train(images, masks, models, cycles):
+
+def train(images, masks, models, cycles, add_noise=False, nprocs=1):
     """ Train an ensemble of models from saved numpy files of images and masks.
         Input = Images + Masks
         Output = Ensemble of models
@@ -19,24 +21,45 @@ def train(images, masks, models, cycles):
         masks (np.array): Numpy array of masks (num_images, img_dim, img_dim)
         models (int): Number of ensemble models to train.
         cycles (int): Number of training cycles.
+        add_noise (bool): Whether or not to add noise - useful for first
+            simulated data.
+        nprocs (int): The number of processes (and GPU's) to use for training.
     Returns:
         smodel (atomai.nets.fcnn.Unet): ???
         ensembe (dict): ???
     """
-    dxform = datatransform(1, gauss_noise=[2000, 3000], poisson_noise=[30, 45],
-                           blur=False, contrast=True, zoom=True, resize=[2, 1],
-                           seed=1)
+    print(images.shape)
+    print(masks.shape)
+    if add_noise:
+        dxform = datatransform(1, gauss_noise=[2000, 3000], poisson_noise=[30, 45],
+                               blur=False, contrast=True, zoom=True, resize=[2, 1],
+                               seed=1)
+        images, masks = dxform.run(images, masks[..., None])
+    print(images.shape)
+    print(masks.shape)
 
-    x_train, y_train = dxform.run(x_train, y_train[..., None])
+    nprocs = 2
 
-    etrainer = EnsembleTrainer("Unet", nb_classes=1, with_dilation=False,
-                               batch_norm=True, nb_filters=64,
-                               layers=[2, 3, 3, 4])
-    etrainer.compile_ensemble_trainer(training_cycles=cycles,
-                                      compute_accuracy=True,
-                                      swa=True, memory_alloc=0.5)
-    smodel, ensemble = etrainer.train_ensemble_from_scratch(images, masks,
-                                                            models=models)
+    if nprocs == 1:
+        etrainer = EnsembleTrainer("Unet", nb_classes=1, with_dilation=False,
+                                   batch_norm=True, nb_filters=64,
+                                   layers=[2, 3, 3, 4])
+        etrainer.compile_ensemble_trainer(training_cycles=cycles,
+                                          compute_accuracy=True,
+                                          swa=True, memory_alloc=0.5)
+        smodel, ensemble = etrainer.train_ensemble_from_scratch(images, masks,
+                                                                n_models=models)
+        return smodel, ensemble
+
+    ### Parallelize the ensemble creation
+    smodel, ensemble = train_in_parallel(images, masks, cycles, models, nprocs)
+    """
+    ensemble = {}
+    for imodel in range(models):
+        smodel, _ensemble = train_with_seed(images, masks, cycles, imodel, 1)
+        key = list(_ensemble.keys())[0]
+        ensemble[key + imodel] = _ensemble[key]
+    """
 
     return smodel, ensemble
 

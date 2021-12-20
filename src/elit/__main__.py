@@ -32,16 +32,19 @@ def main():
     args = utils.get_args()
     mode = sys.argv[1]
 
+    # Create output directory
+    out_dir = os.path.dirname(args.out)
+    if not os.path.exists(out_dir):
+        os.makedirs(os.path.dirname(args.out))
+
     if mode == "train":
         # Train model
         images = np.load(args.images)
         masks = np.load(args.masks)
-        smodel, ensemble = train(images, masks, args.models, args.cycles)
+        smodel, ensemble = train(images, masks, args.models, args.cycles,
+                                 nprocs=args.nprocs)
 
         # Save smodel, ensemble to file
-        out_dir = os.path.dirname(args.out)
-        if not os.path.exists(out_dir):
-            os.makedirs(os.path.dirname(args.out))
         with open(args.out, 'wb') as fout:
             pickle.dump((smodel, ensemble), fout)
     elif mode == "infer":
@@ -53,7 +56,11 @@ def main():
 
         # Perform inference
         img_data = io.imread(args.image)
-        infer(img_data, model)
+        decoded_imgs, coords, masks = infer(img_data, model)
+        
+        # Save output
+        with open(args.out, 'wb') as fout:
+            pickle.dump((decoded_imgs, coords, masks), fout)
     else:
         sys.exit("ERROR: Unknown mode '{}'".format(mode))
 
