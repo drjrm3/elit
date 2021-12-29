@@ -14,3 +14,4 @@ ADD bin /elit/bin
 
 ENV PYTHONPATH "${PYTHONPATH}:/elit/src"
 ENV PATH "${PATH}:/elit/bin"
+

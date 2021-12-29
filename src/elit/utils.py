@@ -14,6 +14,7 @@ def get_args():
     train.add_argument("--cycles", type=int, default=2000)
     train.add_argument("--out", type=str, required=True)
     train.add_argument("--nprocs", type=int, default=1)
+    train.add_argument("--seed", type=int)
 
     infer = subparser.add_parser("infer", help="Infer from models")
     infer.add_argument("--image", type=str, required=True)

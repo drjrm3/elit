@@ -8,6 +8,7 @@ from atomai.trainers import EnsembleTrainer
 from atomai.predictors import SegPredictor
 from atomai.utils import create_lattice_mask
 from skimage import io
+import torch.nn as nn
 
 from .trainer import train_in_parallel
 
@@ -38,8 +39,6 @@ def train(images, masks, models, cycles, add_noise=False, nprocs=1):
     print(images.shape)
     print(masks.shape)
 
-    nprocs = 2
-
     if nprocs == 1:
         etrainer = EnsembleTrainer("Unet", nb_classes=1, with_dilation=False,
                                    batch_norm=True, nb_filters=64,
@@ -50,9 +49,18 @@ def train(images, masks, models, cycles, add_noise=False, nprocs=1):
         smodel, ensemble = etrainer.train_ensemble_from_scratch(images, masks,
                                                                 n_models=models)
         return smodel, ensemble
+    etrainer = EnsembleTrainer("Unet", nb_classes=1, with_dilation=False,
+                               batch_norm=True, nb_filters=64,
+                               layers=[2, 3, 3, 4])
+    etrainer.net = nn.DataParallel(etrainer.net)
+    etrainer.compile_ensemble_trainer(training_cycles=cycles,
+                                      compute_accuracy=True,
+                                      swa=True, memory_alloc=0.5)
+    smodel, ensemble = etrainer.train_ensemble_from_scratch(images, masks,
+                                                            n_models=models)
 
     ### Parallelize the ensemble creation
-    smodel, ensemble = train_in_parallel(images, masks, cycles, models, nprocs)
+    #smodel, ensemble = train_in_parallel(images, masks, cycles, models, nprocs)
     """
     ensemble = {}
     for imodel in range(models):

@@ -6,9 +6,9 @@ from atomai.trainers import EnsembleTrainer
 #from atomai.predictors import SegPredictor
 #from atomai.utils import create_lattice_mask
 #from skimage import io
-
+import pickle
+from tempfile import TemporaryDirectory
 from torch import cuda
-
 from multiprocessing import Pool
 
 def train_with_seed(images, masks, cycles, batch_seed, models):
@@ -25,12 +25,13 @@ def train_with_seed(images, masks, cycles, batch_seed, models):
     return smodel, ensemble
 
 def train_with_seed_wrapper(args):
-    images, masks, cycles, batch_seed, models, outfile = args
+    images, masks, cycles, batch_seed, models, outfile, device = args
     # TODO: This is hacky. Just testing out if I can split devices within map
-    cuda.set_device(batch_seed)
+    cuda.set_device(device)
     smodel, ensemble = train_with_seed(images, masks, cycles, batch_seed, models)
 
-    # TODO: Save smodel, ensemble to 'outfile'
+    with open(outfile, 'wb') as fout:
+        pickle.dump((smodel, ensemble), fout)
 
     return True
 
@@ -38,16 +39,33 @@ def train_in_parallel(images, masks, cycles, models, nprocs):
 
     ensemble = {}
     smodel = None
-    #print(cuda.device_count())
-    #print(cuda.memory_reserved())
+
+    tmpdir = TemporaryDirectory()
+
+    ## Get the number of models each processor should do
+    nmodels_per_proc = [0 for _ in range(nprocs)]
+    iproc = 0
+    while sum(nmodels_per_proc) < models:
+        nmodels_per_proc[iproc] += 1
+        iproc += 1
+        if iproc == nprocs:
+            iproc = 0
+
+    print(nmodels_per_proc)
 
     pool = Pool(processes=nprocs)
     args = []
-    for imodel in range(models):
+    outfiles = []
+    for iproc in range(nprocs):
+        device = iproc
+        outfile = tmpdir.name + '/' + str(iproc)
+        outfiles.append(outfile)
+        nmodels = nmodels_per_proc[iproc]
         args.append(
-            (images, masks, cycles, imodel, 1, '/path/to/outfile' + str(imodel))
+            (images, masks, cycles, iproc, nmodels, outfile, device)
         )
     results = pool.map(train_with_seed_wrapper, args)
-    print(results)
+
+    # Go through and read results
 
     return smodel, ensemble
