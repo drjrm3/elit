@@ -41,12 +41,12 @@ def main():
         # Train model
         images = np.load(args.images)
         masks = np.load(args.masks)
-        smodel, ensemble = train(images, masks, args.models, args.cycles,
-                                 nprocs=args.nprocs)
+        model, ensemble = train(images, masks, args.num_models,
+                                args.training_cycles)
 
         # Save smodel, ensemble to file
         with open(args.out, 'wb') as fout:
-            pickle.dump((smodel, ensemble), fout)
+            pickle.dump((model, ensemble), fout)
     elif mode == "infer":
         # Load the model
         with open(args.models, 'rb') as finp:
@@ -61,6 +61,21 @@ def main():
         # Save output
         with open(args.out, 'wb') as fout:
             pickle.dump((decoded_imgs, coords, masks), fout)
+    elif mode == "iterate":
+
+        # Train initial model with fake data and get real masks for real data
+        sim_images = np.load(args.sim_images)
+        sim_masks = np.load(args.sim_masks)
+        images = io.imread(args.images)
+        masks = cycle(sim_images, sim_masks, images, args.num_models,
+                      args.training_cycles, add_noise=True)
+
+        # Perform inference
+        # TODO: Is this logic right? Not sure if cycle should use 2x 'images'
+        for _ in range(args.iterations):
+            masks = cycle(images, masks, images, args.num_models,
+                          args.training_cycles)
+
     else:
         sys.exit("ERROR: Unknown mode '{}'".format(mode))
 
